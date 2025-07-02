@@ -1,0 +1,85 @@
+
+import { CADSoftware } from './cadVersions';
+
+export const specializedCad: CADSoftware[] = [
+  {
+    id: 600,
+    name: "Altium Designer",
+    description: "PCB design software for electronics engineers.",
+    rating: 4.6,
+    price: 7000,
+    priceType: "subscription",
+    difficulty: 3,
+    categories: ["Electronics", "PCB Design", "Schematic"],
+    platforms: ["Windows"],
+    features: ["Schematic capture", "PCB layout", "3D visualization", "Simulation"],
+    pros: ["Industry standard", "Comprehensive", "Excellent 3D"],
+    cons: ["Very expensive", "Windows only", "Complex"],
+    bestFor: ["Professional PCB design", "Electronics companies", "Complex boards"],
+    primaryUse: ["electronics", "pcb"]
+  },
+  {
+    id: 601,
+    name: "KiCad",
+    description: "Open-source electronics design automation suite.",
+    rating: 4.3,
+    price: 0,
+    priceType: "free",
+    difficulty: 2,
+    categories: ["Electronics", "PCB Design", "Open Source"],
+    platforms: ["Windows", "Mac", "Linux"],
+    features: ["Schematic editor", "PCB layout", "3D viewer", "Gerber export"],
+    pros: ["Completely free", "Cross-platform", "Active development"],
+    cons: ["Smaller library", "Less polished", "Learning curve"],
+    bestFor: ["Hobbyists", "Students", "Open source projects"],
+    primaryUse: ["electronics", "pcb", "any"]
+  },
+  {
+    id: 602,
+    name: "ANSYS",
+    description: "Engineering simulation software suite.",
+    rating: 4.5,
+    price: 5000,
+    priceType: "subscription",
+    difficulty: 4,
+    categories: ["Simulation", "FEA", "CFD", "Electromagnetics"],
+    platforms: ["Windows", "Linux"],
+    features: ["FEA analysis", "CFD simulation", "Electromagnetic", "Multiphysics"],
+    pros: ["Most comprehensive", "Industry standard", "Accurate results"],
+    cons: ["Very expensive", "Extremely complex", "Requires expertise"],
+    bestFor: ["Advanced simulation", "Research", "Large enterprises"],
+    primaryUse: ["simulation", "analysis", "research"]
+  },
+  {
+    id: 603,
+    name: "MATLAB",
+    description: "Programming platform for engineering and scientific computing.",
+    rating: 4.4,
+    price: 2000,
+    priceType: "subscription",
+    difficulty: 3,
+    categories: ["Programming", "Simulation", "Analysis", "Visualization"],
+    platforms: ["Windows", "Mac", "Linux"],
+    features: ["Programming environment", "Simulink", "Toolboxes", "Visualization"],
+    pros: ["Very powerful", "Extensive toolboxes", "Industry standard"],
+    cons: ["Expensive", "Programming required", "Steep learning curve"],
+    bestFor: ["Engineering analysis", "Research", "Algorithm development"],
+    primaryUse: ["analysis", "simulation", "research"]
+  },
+  {
+    id: 604,
+    name: "Mastercam",
+    description: "CAM software for CNC machining.",
+    rating: 4.4,
+    price: 15000,
+    priceType: "one-time",
+    difficulty: 3,
+    categories: ["CAM", "CNC", "Manufacturing"],
+    platforms: ["Windows"],
+    features: ["2D/3D machining", "Toolpath generation", "Simulation", "Post processors"],
+    pros: ["Industry standard CAM", "Comprehensive", "Excellent support"],
+    cons: ["Very expensive", "Windows only", "Complex"],
+    bestFor: ["CNC machining", "Manufacturing", "Production"],
+    primaryUse: ["manufacturing", "cnc", "machining"]
+  }
+];

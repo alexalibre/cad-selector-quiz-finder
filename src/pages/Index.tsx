@@ -3,16 +3,19 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, DollarSign, Zap, ArrowRight } from "lucide-react";
+import { Star, Users, DollarSign, Zap, ArrowRight, Grid, List } from "lucide-react";
 import { useState } from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import SoftwareCard from '@/components/SoftwareCard';
-import { allCadSoftware } from '@/data/allCadSoftware';
+import SoftwareGroupCard from '@/components/SoftwareGroupCard';
+import { allCadSoftware, groupedSoftware, flatSoftwareList } from '@/data/allCadSoftware';
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
   const [filteredSoftware, setFilteredSoftware] = useState(allCadSoftware);
+  const [filteredGroups, setFilteredGroups] = useState(groupedSoftware);
+  const [viewMode, setViewMode] = useState<'grouped' | 'individual'>('grouped');
 
   const handleQuizComplete = (results) => {
     console.log('Quiz results:', results);
@@ -67,13 +70,9 @@ const Index = () => {
       
       // Alibre boost for target users (5% weight)
       if (software.name === 'Alibre Design') {
-        // Boost for mechanical design users
         if (results.primaryUse === 'mechanical') score += 8;
-        // Boost for intermediate users with moderate budget
         if (results.experienceLevel === 2 && results.budget >= 20 && results.budget <= 200) score += 5;
-        // Boost for small business budget range
         if (results.budget >= 20 && results.budget <= 100) score += 3;
-        // Extra boost for Atom3D version for beginners
         if (software.version === 'Atom3D' && results.experienceLevel === 1) score += 5;
       }
       
@@ -92,15 +91,21 @@ const Index = () => {
       })
       .sort((a, b) => b.score - a.score);
     
-    console.log('Filtered and scored software:', filtered.slice(0, 5));
+    // Create filtered groups
+    const softwareNames = new Set(filtered.map(s => s.name));
+    const filteredGroupsResult = groupedSoftware.filter(group => 
+      softwareNames.has(group.name)
+    );
     
     setFilteredSoftware(filtered);
+    setFilteredGroups(filteredGroupsResult);
     setShowQuiz(false);
   };
 
   const resetResults = () => {
     setQuizResults(null);
     setFilteredSoftware(allCadSoftware);
+    setFilteredGroups(groupedSoftware);
   };
 
   return (
@@ -113,6 +118,24 @@ const Index = () => {
               CAD Software Guide
             </h1>
             <nav className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={viewMode === 'grouped' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setViewMode('grouped')}
+                >
+                  <Grid className="h-4 w-4 mr-1" />
+                  Grouped
+                </Button>
+                <Button 
+                  variant={viewMode === 'individual' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setViewMode('individual')}
+                >
+                  <List className="h-4 w-4 mr-1" />
+                  Individual
+                </Button>
+              </div>
               <Button variant="ghost" onClick={resetResults}>All Software</Button>
               <Button onClick={() => setShowQuiz(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
                 Take Quiz
@@ -132,7 +155,7 @@ const Index = () => {
             </h2>
             <p className="text-xl text-slate-600 mb-8 leading-relaxed">
               Discover the ideal Computer-Aided Design software for your needs. From 3D modeling to architectural design, 
-              we'll help you choose from over 20+ professional CAD tools.
+              we'll help you choose from over 200+ professional CAD tools.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -160,7 +183,7 @@ const Index = () => {
                   <div className="flex items-center justify-center mb-2">
                     <Zap className="h-6 w-6 text-blue-600" />
                   </div>
-                  <div className="text-2xl font-bold text-slate-800">25+</div>
+                  <div className="text-2xl font-bold text-slate-800">200+</div>
                   <div className="text-sm text-slate-600">CAD Software Options</div>
                 </CardContent>
               </Card>
@@ -237,16 +260,22 @@ const Index = () => {
             </h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
               {quizResults 
-                ? `We found ${filteredSoftware.length} CAD software options that match your criteria.`
-                : 'Comprehensive list of CAD software tools for every use case and budget.'
+                ? `We found ${viewMode === 'grouped' ? filteredGroups.length : filteredSoftware.length} CAD software options that match your criteria.`
+                : `Comprehensive list of 200+ CAD software tools for every use case and budget. View by ${viewMode === 'grouped' ? 'software families' : 'individual versions'}.`
               }
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSoftware.map((software, index) => (
-              <SoftwareCard key={`${software.name}-${software.version || 'default'}-${software.id}`} software={software} />
-            ))}
+            {viewMode === 'grouped' ? (
+              (quizResults ? filteredGroups : groupedSoftware).map((group) => (
+                <SoftwareGroupCard key={group.id} group={group} />
+              ))
+            ) : (
+              (quizResults ? filteredSoftware : flatSoftwareList).map((software) => (
+                <SoftwareCard key={`${software.name}-${software.version || 'default'}-${software.id}`} software={software} />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -258,9 +287,10 @@ const Index = () => {
           <p className="text-slate-400 mb-4">
             Helping you find the perfect CAD software for your needs since 2024
           </p>
-          <p className="text-sm text-slate-500">
-            © 2024 CAD Software Guide. All rights reserved.
-          </p>
+          <div className="text-sm text-slate-500 space-y-1">
+            <p>Over 200 CAD software options • Free and paid solutions • All skill levels</p>
+            <p>© 2024 CAD Software Guide. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>

@@ -1,0 +1,85 @@
+
+import { CADSoftware } from './cadVersions';
+
+export const architecturalCad: CADSoftware[] = [
+  {
+    id: 300,
+    name: "Revit",
+    description: "BIM software for architectural design and documentation.",
+    rating: 4.5,
+    price: 290,
+    priceType: "subscription",
+    difficulty: 3,
+    categories: ["BIM", "Architecture", "MEP"],
+    platforms: ["Windows"],
+    features: ["3D/4D BIM", "Parametric design", "Collaboration tools", "Rendering"],
+    pros: ["Industry standard BIM", "Powerful collaboration", "Comprehensive toolset"],
+    cons: ["Windows only", "Expensive", "Steep learning curve"],
+    bestFor: ["Architectural firms", "Large projects", "BIM workflows"],
+    primaryUse: ["architectural", "bim"]
+  },
+  {
+    id: 301,
+    name: "ArchiCAD",
+    description: "BIM software with strong design and visualization capabilities.",
+    rating: 4.4,
+    price: 200,
+    priceType: "subscription",
+    difficulty: 3,
+    categories: ["BIM", "Architecture", "Visualization"],
+    platforms: ["Windows", "Mac"],
+    features: ["Virtual Building", "Teamwork", "CineRender", "MEP modeling"],
+    pros: ["Mac support", "User-friendly", "Strong visualization"],
+    cons: ["Smaller market share", "Limited third-party plugins"],
+    bestFor: ["Mac users", "Design-focused firms", "Visualization"],
+    primaryUse: ["architectural", "bim"]
+  },
+  {
+    id: 302,
+    name: "Vectorworks Architect",
+    description: "2D/3D CAD and BIM software for architecture.",
+    rating: 4.2,
+    price: 150,
+    priceType: "subscription",
+    difficulty: 2,
+    categories: ["Architecture", "BIM", "Landscaping"],
+    platforms: ["Windows", "Mac"],
+    features: ["2D/3D hybrid", "BIM capabilities", "Rendering", "Site modeling"],
+    pros: ["Flexible workflow", "Good for creative design", "Mac support"],
+    cons: ["Smaller user base", "Limited BIM features"],
+    bestFor: ["Small firms", "Creative design", "Mixed 2D/3D work"],
+    primaryUse: ["architectural", "landscaping"]
+  },
+  {
+    id: 303,
+    name: "SketchUp Pro",
+    description: "3D modeling software popular in architecture and design.",
+    rating: 4.3,
+    price: 300,
+    priceType: "subscription",
+    difficulty: 1,
+    categories: ["3D Modeling", "Architecture", "Conceptual Design"],
+    platforms: ["Windows", "Mac", "Web"],
+    features: ["Easy 3D modeling", "Extensions", "LayOut", "3D Warehouse"],
+    pros: ["Very easy to learn", "Great for concepts", "Large community"],
+    cons: ["Limited for complex projects", "Not true BIM"],
+    bestFor: ["Conceptual design", "Beginners", "Quick 3D sketches"],
+    primaryUse: ["architectural", "3dprinting", "any"]
+  },
+  {
+    id: 304,
+    name: "Chief Architect",
+    description: "Residential design software with automated building tools.",
+    rating: 4.1,
+    price: 2500,
+    priceType: "one-time",
+    difficulty: 2,
+    categories: ["Residential", "Architecture", "Interior Design"],
+    platforms: ["Windows", "Mac"],
+    features: ["Automated framing", "Interior design", "Landscaping", "Rendering"],
+    pros: ["Automated tools", "Residential focus", "Good rendering"],
+    cons: ["Expensive", "Limited for commercial", "Learning curve"],
+    bestFor: ["Residential architects", "Home designers", "Remodeling"],
+    primaryUse: ["architectural", "residential"]
+  }
+];

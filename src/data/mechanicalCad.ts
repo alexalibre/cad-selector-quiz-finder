@@ -1,0 +1,85 @@
+
+import { CADSoftware } from './cadVersions';
+
+export const mechanicalCad: CADSoftware[] = [
+  {
+    id: 400,
+    name: "CATIA",
+    description: "High-end CAD/CAM/CAE software for complex product design.",
+    rating: 4.6,
+    price: 1200,
+    priceType: "subscription",
+    difficulty: 4,
+    categories: ["Mechanical", "Aerospace", "Automotive", "Advanced Design"],
+    platforms: ["Windows"],
+    features: ["Advanced surfacing", "Simulation", "Manufacturing", "PLM integration"],
+    pros: ["Most powerful", "Industry standard", "Complete solution"],
+    cons: ["Very expensive", "Extremely complex", "Requires training"],
+    bestFor: ["Aerospace", "Automotive", "Large enterprises"],
+    primaryUse: ["mechanical", "aerospace", "automotive"]
+  },
+  {
+    id: 401,
+    name: "NX (Siemens)",
+    description: "Advanced CAD/CAM/CAE software for product development.",
+    rating: 4.5,
+    price: 1000,
+    priceType: "subscription",
+    difficulty: 4,
+    categories: ["Mechanical", "Manufacturing", "Simulation"],
+    platforms: ["Windows", "Linux"],
+    features: ["Synchronous technology", "Advanced CAM", "Simulation", "PLM"],
+    pros: ["Very powerful", "Excellent CAM", "Synchronous modeling"],
+    cons: ["Very expensive", "Complex interface", "Long learning curve"],
+    bestFor: ["Manufacturing", "Aerospace", "Automotive"],
+    primaryUse: ["mechanical", "manufacturing", "aerospace"]
+  },
+  {
+    id: 402,
+    name: "CREO (PTC)",
+    description: "Parametric 3D CAD software for product design.",
+    rating: 4.3,
+    price: 800,
+    priceType: "subscription",
+    difficulty: 3,
+    categories: ["Mechanical", "Product Design", "Manufacturing"],
+    platforms: ["Windows"],
+    features: ["Parametric modeling", "Direct modeling", "Simulation", "CAM"],
+    pros: ["Strong parametric", "Good simulation", "Manufacturing tools"],
+    cons: ["Expensive", "Complex", "Windows only"],
+    bestFor: ["Product development", "Manufacturing", "Engineering"],
+    primaryUse: ["mechanical", "manufacturing", "industrial"]
+  },
+  {
+    id: 403,
+    name: "KeyShot",
+    description: "Real-time ray-tracing and global illumination rendering.",
+    rating: 4.7,
+    price: 2000,
+    priceType: "one-time",
+    difficulty: 2,
+    categories: ["Rendering", "Visualization", "Animation"],
+    platforms: ["Windows", "Mac"],
+    features: ["Real-time rendering", "Material library", "Animation", "VR support"],
+    pros: ["Amazing quality", "Easy to use", "Fast rendering"],
+    cons: ["Expensive", "Rendering only", "Limited modeling"],
+    bestFor: ["Product visualization", "Marketing", "Presentations"],
+    primaryUse: ["rendering", "visualization", "any"]
+  },
+  {
+    id: 404,
+    name: "Rhinoceros 3D",
+    description: "NURBS-based 3D modeling software for complex surfaces.",
+    rating: 4.4,
+    price: 1000,
+    priceType: "one-time",
+    difficulty: 3,
+    categories: ["3D Modeling", "Industrial Design", "Jewelry"],
+    platforms: ["Windows", "Mac"],
+    features: ["NURBS modeling", "Grasshopper", "Rendering", "Analysis"],
+    pros: ["Excellent for complex surfaces", "Perpetual license", "Grasshopper"],
+    cons: ["Not parametric", "Learning curve", "Limited assemblies"],
+    bestFor: ["Industrial design", "Jewelry", "Complex surfaces"],
+    primaryUse: ["industrial", "jewelry", "any"]
+  }
+];
