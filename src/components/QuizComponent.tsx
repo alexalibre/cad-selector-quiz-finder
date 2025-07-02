@@ -1,13 +1,25 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
-const QuizComponent = ({ onComplete, onClose }) => {
+interface QuizAnswers {
+  primaryUse?: string;
+  experience?: string;
+  budget?: number;
+  platform?: string;
+  features?: string[];
+}
+
+interface QuizComponentProps {
+  onComplete: (results: any) => void;
+  onClose: () => void;
+}
+
+const QuizComponent: React.FC<QuizComponentProps> = ({ onComplete, onClose }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState<QuizAnswers>({});
 
   const questions = [
     {
@@ -78,14 +90,14 @@ const QuizComponent = ({ onComplete, onClose }) => {
     }
   ];
 
-  const handleAnswer = (questionId, value) => {
+  const handleAnswer = (questionId: string, value: string | number) => {
     const question = questions[currentQuestion];
     
     if (question.multiple) {
-      const currentAnswers = answers[questionId] || [];
-      const updatedAnswers = currentAnswers.includes(value)
+      const currentAnswers = (answers[questionId as keyof QuizAnswers] as string[]) || [];
+      const updatedAnswers = currentAnswers.includes(value as string)
         ? currentAnswers.filter(v => v !== value)
-        : [...currentAnswers, value];
+        : [...currentAnswers, value as string];
       
       setAnswers(prev => ({
         ...prev,
@@ -110,15 +122,15 @@ const QuizComponent = ({ onComplete, onClose }) => {
         budget: answers.budget || 0,
         platform: answers.platform || 'any',
         features: answers.features || [],
-        experienceLevel: getExperienceLevel(answers.experience)
+        experienceLevel: getExperienceLevel(answers.experience || 'beginner')
       };
       
       onComplete(results);
     }
   };
 
-  const getExperienceLevel = (experience) => {
-    const levels = {
+  const getExperienceLevel = (experience: string) => {
+    const levels: Record<string, number> = {
       'beginner': 1,
       'intermediate': 2,
       'advanced': 3,
@@ -135,10 +147,10 @@ const QuizComponent = ({ onComplete, onClose }) => {
 
   const canProceed = () => {
     const currentQ = questions[currentQuestion];
-    const answer = answers[currentQ.id];
+    const answer = answers[currentQ.id as keyof QuizAnswers];
     
     if (currentQ.multiple) {
-      return answer && answer.length > 0;
+      return answer && Array.isArray(answer) && answer.length > 0;
     }
     return answer !== undefined;
   };
@@ -183,8 +195,8 @@ const QuizComponent = ({ onComplete, onClose }) => {
       <div className="space-y-3 mb-8">
         {currentQ.options.map((option) => {
           const isSelected = currentQ.multiple 
-            ? (answers[currentQ.id] || []).includes(option.value)
-            : answers[currentQ.id] === option.value;
+            ? ((answers[currentQ.id as keyof QuizAnswers] as string[]) || []).includes(option.value as string)
+            : answers[currentQ.id as keyof QuizAnswers] === option.value;
             
           return (
             <Card 
