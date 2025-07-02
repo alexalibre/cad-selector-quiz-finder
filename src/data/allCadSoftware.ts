@@ -20,4 +20,4 @@ export const allCadSoftware = [
   return 0;
 });
 
-export { CADSoftware } from './cadVersions';
+export type { CADSoftware } from './cadVersions';
