@@ -15,18 +15,85 @@ const Index = () => {
   const [filteredSoftware, setFilteredSoftware] = useState(cadSoftwareData);
 
   const handleQuizComplete = (results) => {
+    console.log('Quiz results:', results);
     setQuizResults(results);
     
-    // Filter software based on quiz results
-    const filtered = cadSoftwareData.filter(software => {
-      const budgetMatch = software.price <= results.budget || software.price === 0;
-      const categoryMatch = results.primaryUse === 'any' || software.categories.includes(results.primaryUse);
-      const levelMatch = results.experience === 'any' || software.difficulty <= results.experienceLevel;
+    // Enhanced filtering with scoring system
+    const scoredSoftware = cadSoftwareData.map(software => {
+      let score = 0;
       
-      return budgetMatch && categoryMatch && levelMatch;
+      // Budget matching (30% weight)
+      if (software.price === 0 && results.budget === 0) {
+        score += 30; // Perfect match for free
+      } else if (software.price <= results.budget) {
+        score += 30 - (software.price / results.budget) * 10; // Closer to budget = higher score
+      } else if (software.price > results.budget) {
+        score -= 20; // Penalty for over budget
+      }
+      
+      // Primary use matching (25% weight)
+      if (software.primaryUse && software.primaryUse.includes(results.primaryUse)) {
+        score += 25;
+      } else if (results.primaryUse === 'any' || software.primaryUse?.includes('any')) {
+        score += 15;
+      }
+      
+      // Experience level matching (20% weight)
+      const experienceDiff = Math.abs(software.difficulty - results.experienceLevel);
+      if (experienceDiff === 0) {
+        score += 20;
+      } else if (experienceDiff === 1) {
+        score += 15;
+      } else if (experienceDiff === 2) {
+        score += 5;
+      }
+      
+      // Platform matching (10% weight)
+      if (results.platform === 'any' || software.platforms.some(p => 
+        p.toLowerCase().includes(results.platform.toLowerCase())
+      )) {
+        score += 10;
+      }
+      
+      // Features matching (10% weight)
+      if (results.features && results.features.length > 0) {
+        const featureMatches = results.features.filter(userFeature => 
+          software.features.some(softwareFeature => 
+            softwareFeature.toLowerCase().includes(userFeature.toLowerCase())
+          )
+        ).length;
+        score += (featureMatches / results.features.length) * 10;
+      }
+      
+      // Alibre boost for target users (5% weight)
+      if (software.name === 'Alibre Design') {
+        // Boost for mechanical design users
+        if (results.primaryUse === 'mechanical') score += 8;
+        // Boost for intermediate users with moderate budget
+        if (results.experienceLevel === 2 && results.budget >= 50 && results.budget <= 200) score += 5;
+        // Boost for small business budget range
+        if (results.budget >= 30 && results.budget <= 100) score += 3;
+      }
+      
+      // Rating bonus (5% weight)
+      score += software.rating;
+      
+      return { ...software, score };
     });
     
-    setFilteredSoftware(filtered.sort((a, b) => b.rating - a.rating));
+    // Filter out software that's way over budget or completely mismatched
+    const filtered = scoredSoftware.filter(software => {
+      if (software.price > results.budget * 2 && results.budget > 0) return false;
+      if (software.score < 10) return false;
+      return true;
+    });
+    
+    // Sort by score (highest first)
+    const sorted = filtered.sort((a, b) => b.score - a.score);
+    
+    console.log('Filtered and scored software:', sorted.slice(0, 5));
+    
+    setFilteredSoftware(sorted);
     setShowQuiz(false);
   };
 
