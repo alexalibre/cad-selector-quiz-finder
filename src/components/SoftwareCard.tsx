@@ -50,6 +50,11 @@ const SoftwareCard = ({ software }) => {
           <div className="flex-1">
             <CardTitle className="text-lg font-bold text-slate-800 mb-1">
               {software.name}
+              {software.version && (
+                <span className="text-sm font-medium text-blue-600 ml-2">
+                  {software.version}
+                </span>
+              )}
             </CardTitle>
             <div className="flex items-center gap-2 mb-2">
               <div className="flex items-center gap-1">

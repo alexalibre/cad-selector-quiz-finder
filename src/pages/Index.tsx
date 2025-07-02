@@ -7,28 +7,28 @@ import { Star, Users, DollarSign, Zap, ArrowRight } from "lucide-react";
 import { useState } from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import SoftwareCard from '@/components/SoftwareCard';
-import { cadSoftwareData } from '@/data/cadSoftware';
+import { allCadSoftware } from '@/data/allCadSoftware';
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
-  const [filteredSoftware, setFilteredSoftware] = useState(cadSoftwareData);
+  const [filteredSoftware, setFilteredSoftware] = useState(allCadSoftware);
 
   const handleQuizComplete = (results) => {
     console.log('Quiz results:', results);
     setQuizResults(results);
     
     // Enhanced filtering with scoring system
-    const scoredSoftware = cadSoftwareData.map(software => {
+    const scoredSoftware = allCadSoftware.map(software => {
       let score = 0;
       
       // Budget matching (30% weight)
       if (software.price === 0 && results.budget === 0) {
-        score += 30; // Perfect match for free
+        score += 30;
       } else if (software.price <= results.budget) {
-        score += 30 - (software.price / results.budget) * 10; // Closer to budget = higher score
+        score += 30 - (software.price / results.budget) * 10;
       } else if (software.price > results.budget) {
-        score -= 20; // Penalty for over budget
+        score -= 20;
       }
       
       // Primary use matching (25% weight)
@@ -70,9 +70,11 @@ const Index = () => {
         // Boost for mechanical design users
         if (results.primaryUse === 'mechanical') score += 8;
         // Boost for intermediate users with moderate budget
-        if (results.experienceLevel === 2 && results.budget >= 50 && results.budget <= 200) score += 5;
+        if (results.experienceLevel === 2 && results.budget >= 20 && results.budget <= 200) score += 5;
         // Boost for small business budget range
-        if (results.budget >= 30 && results.budget <= 100) score += 3;
+        if (results.budget >= 20 && results.budget <= 100) score += 3;
+        // Extra boost for Atom3D version for beginners
+        if (software.version === 'Atom3D' && results.experienceLevel === 1) score += 5;
       }
       
       // Rating bonus (5% weight)
@@ -81,25 +83,24 @@ const Index = () => {
       return { ...software, score };
     });
     
-    // Filter out software that's way over budget or completely mismatched
-    const filtered = scoredSoftware.filter(software => {
-      if (software.price > results.budget * 2 && results.budget > 0) return false;
-      if (software.score < 10) return false;
-      return true;
-    });
+    // Filter and sort
+    const filtered = scoredSoftware
+      .filter(software => {
+        if (software.price > results.budget * 2 && results.budget > 0) return false;
+        if (software.score < 10) return false;
+        return true;
+      })
+      .sort((a, b) => b.score - a.score);
     
-    // Sort by score (highest first)
-    const sorted = filtered.sort((a, b) => b.score - a.score);
+    console.log('Filtered and scored software:', filtered.slice(0, 5));
     
-    console.log('Filtered and scored software:', sorted.slice(0, 5));
-    
-    setFilteredSoftware(sorted);
+    setFilteredSoftware(filtered);
     setShowQuiz(false);
   };
 
   const resetResults = () => {
     setQuizResults(null);
-    setFilteredSoftware(cadSoftwareData);
+    setFilteredSoftware(allCadSoftware);
   };
 
   return (
@@ -244,7 +245,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSoftware.map((software, index) => (
-              <SoftwareCard key={software.id} software={software} />
+              <SoftwareCard key={`${software.name}-${software.version || 'default'}-${software.id}`} software={software} />
             ))}
           </div>
         </div>
