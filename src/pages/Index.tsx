@@ -3,26 +3,69 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, DollarSign, Zap, ArrowRight, Grid, List } from "lucide-react";
-import { useState } from 'react';
+import { Star, Users, DollarSign, Zap, ArrowRight, Grid, List, Settings } from "lucide-react";
+import { useState, useEffect } from 'react';
 import QuizComponent from '@/components/QuizComponent';
 import SoftwareCard from '@/components/SoftwareCard';
 import SoftwareGroupCard from '@/components/SoftwareGroupCard';
+import BlogSection from '@/components/BlogSection';
+import AuthForm from '@/components/auth/AuthForm';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 import { allCadSoftware, groupedSoftware, flatSoftwareList } from '@/data/allCadSoftware';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
   const [filteredSoftware, setFilteredSoftware] = useState(allCadSoftware);
   const [filteredGroups, setFilteredGroups] = useState(groupedSoftware);
   const [viewMode, setViewMode] = useState<'grouped' | 'individual'>('grouped');
+  const [supabaseSoftware, setSupabaseSoftware] = useState([]);
+  const { user, loading, isAdmin } = useAuth();
+
+  useEffect(() => {
+    fetchSupabaseSoftware();
+  }, []);
+
+  const fetchSupabaseSoftware = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('software_entries')
+        .select(`
+          *,
+          categories(name)
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        // Transform Supabase data to match existing format
+        const transformedData = data.map(item => ({
+          ...item,
+          categories: item.categories ? [item.categories.name] : [],
+          priceType: item.price_type
+        }));
+        setSupabaseSoftware(transformedData);
+      }
+    } catch (error) {
+      console.error('Error fetching Supabase software:', error);
+    }
+  };
+
+  // Use Supabase data if available, otherwise fallback to static data
+  const currentSoftware = supabaseSoftware.length > 0 ? supabaseSoftware : allCadSoftware;
+  const currentGroups = supabaseSoftware.length > 0 ? [] : groupedSoftware; // TODO: Group Supabase data
+  const currentFlatList = supabaseSoftware.length > 0 ? supabaseSoftware : flatSoftwareList;
 
   const handleQuizComplete = (results) => {
     console.log('Quiz results:', results);
     setQuizResults(results);
     
     // Enhanced filtering with scoring system
-    const scoredSoftware = allCadSoftware.map(software => {
+    const scoredSoftware = currentSoftware.map(software => {
       let score = 0;
       
       // Budget matching (30% weight)
@@ -93,7 +136,7 @@ const Index = () => {
     
     // Create filtered groups
     const softwareNames = new Set(filtered.map(s => s.name));
-    const filteredGroupsResult = groupedSoftware.filter(group => 
+    const filteredGroupsResult = currentGroups.filter(group => 
       softwareNames.has(group.name)
     );
     
@@ -104,9 +147,25 @@ const Index = () => {
 
   const resetResults = () => {
     setQuizResults(null);
-    setFilteredSoftware(allCadSoftware);
-    setFilteredGroups(groupedSoftware);
+    setFilteredSoftware(currentSoftware);
+    setFilteredGroups(currentGroups);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (showAuth) {
+    return <AuthForm onSuccess={() => setShowAuth(false)} />;
+  }
+
+  if (user && isAdmin) {
+    return <AdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -139,6 +198,14 @@ const Index = () => {
               <Button variant="ghost" onClick={resetResults}>All Software</Button>
               <Button onClick={() => setShowQuiz(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
                 Take Quiz
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAuth(true)}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Admin
               </Button>
             </nav>
           </div>
@@ -268,17 +335,20 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {viewMode === 'grouped' ? (
-              (quizResults ? filteredGroups : groupedSoftware).map((group) => (
+              (quizResults ? filteredGroups : currentGroups).map((group) => (
                 <SoftwareGroupCard key={group.id} group={group} />
               ))
             ) : (
-              (quizResults ? filteredSoftware : flatSoftwareList).map((software) => (
+              (quizResults ? filteredSoftware : currentFlatList).map((software) => (
                 <SoftwareCard key={`${software.name}-${software.version || 'default'}-${software.id}`} software={software} />
               ))
             )}
           </div>
         </div>
       </section>
+
+      {/* Blog Section */}
+      <BlogSection />
 
       {/* Footer */}
       <footer className="bg-slate-800 text-white py-12 px-4 mt-20">
