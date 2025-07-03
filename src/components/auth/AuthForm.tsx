@@ -48,11 +48,15 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up without email confirmation
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          email_confirm: false
+        }
       }
     });
 
@@ -62,11 +66,20 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Check your email!",
-        description: "We've sent you a confirmation link.",
-      });
+    } else if (data.user) {
+      // Check if user was created and confirmed
+      if (data.user.email_confirmed_at || !data.user.confirmation_sent_at) {
+        toast({
+          title: "Account created!",
+          description: "You have been registered and logged in successfully.",
+        });
+        onSuccess();
+      } else {
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created. You can now sign in.",
+        });
+      }
     }
     setIsLoading(false);
   };
@@ -143,8 +156,11 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign Up
+                  Create Account
                 </Button>
+                <p className="text-sm text-gray-600 text-center">
+                  Create an account to access the admin panel
+                </p>
               </form>
             </TabsContent>
           </Tabs>

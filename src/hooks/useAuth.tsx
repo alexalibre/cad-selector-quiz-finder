@@ -13,6 +13,7 @@ export const useAuth = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -24,6 +25,7 @@ export const useAuth = () => {
               .select('id')
               .eq('id', session.user.id)
               .single();
+            console.log('Admin check result:', data);
             setIsAdmin(!!data);
           }, 0);
         } else {
@@ -36,6 +38,7 @@ export const useAuth = () => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
