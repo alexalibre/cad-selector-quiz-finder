@@ -1,368 +1,342 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, DollarSign, Zap, ArrowRight, Grid, List, Settings } from "lucide-react";
-import { useState, useEffect } from 'react';
-import QuizComponent from '@/components/QuizComponent';
-import SoftwareCard from '@/components/SoftwareCard';
-import SoftwareGroupCard from '@/components/SoftwareGroupCard';
-import BlogSection from '@/components/BlogSection';
+import { Search, Filter, Star, Users, Award, Zap, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from '@/hooks/useAuth';
 import AuthForm from '@/components/auth/AuthForm';
 import AdminDashboard from '@/components/admin/AdminDashboard';
-import { allCadSoftware, groupedSoftware, flatSoftwareList } from '@/data/allCadSoftware';
-import { useAuth } from '@/hooks/useAuth';
+import SoftwareCard from '@/components/SoftwareCard';
+import BlogSection from '@/components/BlogSection';
+import TrendingTools from '@/components/TrendingTools';
 import { supabase } from '@/integrations/supabase/client';
 
+interface SoftwareEntry {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  price_type: string;
+  category_id: string;
+  image_url: string;
+  website_url: string;
+  rating: number;
+  difficulty: number;
+  platforms: string[];
+  features: string[];
+  is_active: boolean;
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
 const Index = () => {
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [quizResults, setQuizResults] = useState(null);
-  const [filteredSoftware, setFilteredSoftware] = useState(allCadSoftware);
-  const [filteredGroups, setFilteredGroups] = useState(groupedSoftware);
-  const [viewMode, setViewMode] = useState<'grouped' | 'individual'>('grouped');
-  const [supabaseSoftware, setSupabaseSoftware] = useState([]);
   const { user, loading, isAdmin } = useAuth();
+  const [software, setSoftware] = useState<SoftwareEntry[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredSoftware, setFilteredSoftware] = useState<SoftwareEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [priceFilter, setPriceFilter] = useState<string>('all');
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
+  const [dataLoading, setDataLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSupabaseSoftware();
-  }, []);
+    if (!loading) {
+      fetchData();
+    }
+  }, [loading]);
 
-  const fetchSupabaseSoftware = async () => {
+  useEffect(() => {
+    filterSoftware();
+  }, [software, searchTerm, selectedCategory, priceFilter, difficultyFilter]);
+
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
-        .from('software_entries')
-        .select(`
-          *,
-          categories(name)
-        `)
-        .eq('is_active', true)
-        .order('name');
+      const [softwareData, categoriesData] = await Promise.all([
+        supabase.from('software_entries').select('*').eq('is_active', true).order('name'),
+        supabase.from('categories').select('*').order('name')
+      ]);
 
-      if (error) throw error;
-      if (data && data.length > 0) {
-        // Transform Supabase data to match existing format
-        const transformedData = data.map(item => ({
-          ...item,
-          categories: item.categories ? [item.categories.name] : [],
-          priceType: item.price_type
-        }));
-        setSupabaseSoftware(transformedData);
-      }
+      if (softwareData.data) setSoftware(softwareData.data);
+      if (categoriesData.data) setCategories(categoriesData.data);
     } catch (error) {
-      console.error('Error fetching Supabase software:', error);
+      console.error('Error fetching data:', error);
+    } finally {
+      setDataLoading(false);
     }
   };
 
-  // Use Supabase data if available, otherwise fallback to static data
-  const currentSoftware = supabaseSoftware.length > 0 ? supabaseSoftware : allCadSoftware;
-  const currentGroups = supabaseSoftware.length > 0 ? [] : groupedSoftware; // TODO: Group Supabase data
-  const currentFlatList = supabaseSoftware.length > 0 ? supabaseSoftware : flatSoftwareList;
+  const filterSoftware = () => {
+    let filtered = software;
 
-  const handleQuizComplete = (results) => {
-    console.log('Quiz results:', results);
-    setQuizResults(results);
-    
-    // Enhanced filtering with scoring system
-    const scoredSoftware = currentSoftware.map(software => {
-      let score = 0;
-      
-      // Budget matching (30% weight)
-      if (software.price === 0 && results.budget === 0) {
-        score += 30;
-      } else if (software.price <= results.budget) {
-        score += 30 - (software.price / results.budget) * 10;
-      } else if (software.price > results.budget) {
-        score -= 20;
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category_id === selectedCategory);
+    }
+
+    // Price filter
+    if (priceFilter !== 'all') {
+      switch (priceFilter) {
+        case 'free':
+          filtered = filtered.filter(item => item.price === 0 || item.price === null);
+          break;
+        case 'paid':
+          filtered = filtered.filter(item => item.price > 0);
+          break;
+        case 'under-100':
+          filtered = filtered.filter(item => item.price <= 100);
+          break;
+        case 'over-100':
+          filtered = filtered.filter(item => item.price > 100);
+          break;
       }
-      
-      // Primary use matching (25% weight)
-      if (software.primaryUse && software.primaryUse.includes(results.primaryUse)) {
-        score += 25;
-      } else if (results.primaryUse === 'any' || software.primaryUse?.includes('any')) {
-        score += 15;
-      }
-      
-      // Experience level matching (20% weight)
-      const experienceDiff = Math.abs(software.difficulty - results.experienceLevel);
-      if (experienceDiff === 0) {
-        score += 20;
-      } else if (experienceDiff === 1) {
-        score += 15;
-      } else if (experienceDiff === 2) {
-        score += 5;
-      }
-      
-      // Platform matching (10% weight)
-      if (results.platform === 'any' || software.platforms.some(p => 
-        p.toLowerCase().includes(results.platform.toLowerCase())
-      )) {
-        score += 10;
-      }
-      
-      // Features matching (10% weight)
-      if (results.features && results.features.length > 0) {
-        const featureMatches = results.features.filter(userFeature => 
-          software.features.some(softwareFeature => 
-            softwareFeature.toLowerCase().includes(userFeature.toLowerCase())
-          )
-        ).length;
-        score += (featureMatches / results.features.length) * 10;
-      }
-      
-      // Alibre boost for target users (5% weight)
-      if (software.name === 'Alibre Design') {
-        if (results.primaryUse === 'mechanical') score += 8;
-        if (results.experienceLevel === 2 && results.budget >= 20 && results.budget <= 200) score += 5;
-        if (results.budget >= 20 && results.budget <= 100) score += 3;
-        if (software.version === 'Atom3D' && results.experienceLevel === 1) score += 5;
-      }
-      
-      // Rating bonus (5% weight)
-      score += software.rating;
-      
-      return { ...software, score };
-    });
-    
-    // Filter and sort
-    const filtered = scoredSoftware
-      .filter(software => {
-        if (software.price > results.budget * 2 && results.budget > 0) return false;
-        if (software.score < 10) return false;
-        return true;
-      })
-      .sort((a, b) => b.score - a.score);
-    
-    // Create filtered groups
-    const softwareNames = new Set(filtered.map(s => s.name));
-    const filteredGroupsResult = currentGroups.filter(group => 
-      softwareNames.has(group.name)
-    );
-    
+    }
+
+    // Difficulty filter
+    if (difficultyFilter !== 'all') {
+      const difficulty = parseInt(difficultyFilter);
+      filtered = filtered.filter(item => item.difficulty === difficulty);
+    }
+
     setFilteredSoftware(filtered);
-    setFilteredGroups(filteredGroupsResult);
-    setShowQuiz(false);
-  };
-
-  const resetResults = () => {
-    setQuizResults(null);
-    setFilteredSoftware(currentSoftware);
-    setFilteredGroups(currentGroups);
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (showAuth) {
-    return <AuthForm onSuccess={() => setShowAuth(false)} />;
-  }
-
+  // Show admin dashboard if user is admin
   if (user && isAdmin) {
     return <AdminDashboard />;
   }
 
+  // Show auth form if user is not logged in
+  if (!user) {
+    return <AuthForm onSuccess={() => window.location.reload()} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              CAD Software Guide
-            </h1>
-            <nav className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant={viewMode === 'grouped' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setViewMode('grouped')}
-                >
-                  <Grid className="h-4 w-4 mr-1" />
-                  Grouped
-                </Button>
-                <Button 
-                  variant={viewMode === 'individual' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setViewMode('individual')}
-                >
-                  <List className="h-4 w-4 mr-1" />
-                  Individual
-                </Button>
-              </div>
-              <Button variant="ghost" onClick={resetResults}>All Software</Button>
-              <Button onClick={() => setShowQuiz(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                Take Quiz
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowAuth(true)}
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                Admin
-              </Button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
-      {!quizResults && (
-        <section className="py-20 px-4">
-          <div className="container mx-auto text-center max-w-4xl">
-            <h2 className="text-5xl font-bold text-slate-800 mb-6 leading-tight">
-              Find the Perfect 
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"> CAD Software</span>
-            </h2>
-            <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-              Discover the ideal Computer-Aided Design software for your needs. From 3D modeling to architectural design, 
-              we'll help you choose from over 200+ professional CAD tools.
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              Find Your Perfect CAD Software
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+              Discover, compare, and choose from 200+ CAD software solutions. 
+              Get personalized recommendations based on your needs.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                onClick={() => setShowQuiz(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-8 py-4 text-lg"
+                className="bg-white text-blue-600 hover:bg-slate-100 px-8 py-3"
+                onClick={() => navigate('/quiz')}
               >
-                Take Our Quiz <ArrowRight className="ml-2 h-5 w-5" />
+                Take Our Quiz
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                onClick={() => document.getElementById('software-list').scrollIntoView({ behavior: 'smooth' })}
-                className="px-8 py-4 text-lg"
+                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3"
+                onClick={() => navigate('/compare')}
               >
-                Browse All Software
+                Compare Tools
               </Button>
             </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                <CardContent className="pt-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Zap className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">200+</div>
-                  <div className="text-sm text-slate-600">CAD Software Options</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                <CardContent className="pt-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Users className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">All Levels</div>
-                  <div className="text-sm text-slate-600">Beginner to Professional</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-                <CardContent className="pt-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <DollarSign className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">Free & Paid</div>
-                  <div className="text-sm text-slate-600">Options for Every Budget</div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Quiz Modal */}
-      {showQuiz && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <QuizComponent 
-              onComplete={handleQuizComplete}
-              onClose={() => setShowQuiz(false)}
-            />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Results Section */}
-      {quizResults && (
-        <section className="py-12 px-4">
-          <div className="container mx-auto max-w-4xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-4">
-                Recommended CAD Software for You
-              </h2>
-              <p className="text-slate-600 mb-4">
-                Based on your preferences: {quizResults.primaryUse} • {quizResults.experience} level • 
-                Budget: ${quizResults.budget === 10000 ? '1000+' : quizResults.budget} per month
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={resetResults}
-                className="mr-4"
-              >
-                View All Software
-              </Button>
-              <Button onClick={() => setShowQuiz(true)}>
-                Retake Quiz
-              </Button>
+      {/* Stats Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-100 p-4 rounded-full mb-4">
+                <Star className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">200+</h3>
+              <p className="text-slate-600">CAD Software Options</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-green-100 p-4 rounded-full mb-4">
+                <Users className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">10K+</h3>
+              <p className="text-slate-600">Happy Users</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-purple-100 p-4 rounded-full mb-4">
+                <Award className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">Expert</h3>
+              <p className="text-slate-600">Reviews & Ratings</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-orange-100 p-4 rounded-full mb-4">
+                <Zap className="h-8 w-8 text-orange-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">Free</h3>
+              <p className="text-slate-600">Personalized Recommendations</p>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </div>
 
-      {/* Software List */}
-      <section id="software-list" className="py-12 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">
-              {quizResults ? 'Your Recommendations' : 'All CAD Software'}
-            </h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              {quizResults 
-                ? `We found ${viewMode === 'grouped' ? filteredGroups.length : filteredSoftware.length} CAD software options that match your criteria.`
-                : `Comprehensive list of 200+ CAD software tools for every use case and budget. View by ${viewMode === 'grouped' ? 'software families' : 'individual versions'}.`
-              }
-            </p>
-          </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Search and Filters */}
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Search & Filter
+                </CardTitle>
+                <CardDescription>
+                  Find the perfect CAD software for your needs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <Input
+                      placeholder="Search software..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={priceFilter} onValueChange={setPriceFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Price" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Prices</SelectItem>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="under-100">Under $100</SelectItem>
+                      <SelectItem value="over-100">Over $100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="1">Beginner</SelectItem>
+                      <SelectItem value="2">Intermediate</SelectItem>
+                      <SelectItem value="3">Advanced</SelectItem>
+                      <SelectItem value="4">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {viewMode === 'grouped' ? (
-              (quizResults ? filteredGroups : currentGroups).map((group) => (
-                <SoftwareGroupCard key={group.id} group={group} />
-              ))
+            {/* Software Grid */}
+            {dataLoading ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500">Loading software...</p>
+              </div>
+            ) : filteredSoftware.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500">No software found matching your criteria.</p>
+              </div>
             ) : (
-              (quizResults ? filteredSoftware : currentFlatList).map((software) => (
-                <SoftwareCard key={`${software.name}-${software.version || 'default'}-${software.id}`} software={software} />
-              ))
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    CAD Software Directory
+                  </h2>
+                  <Badge variant="secondary" className="text-sm">
+                    {filteredSoftware.length} results
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                  {filteredSoftware.map((software) => (
+                    <SoftwareCard key={software.id} software={software} />
+                  ))}
+                </div>
+              </>
             )}
           </div>
-        </div>
-      </section>
 
-      {/* Blog Section */}
-      <BlogSection />
-
-      {/* Footer */}
-      <footer className="bg-slate-800 text-white py-12 px-4 mt-20">
-        <div className="container mx-auto text-center">
-          <h3 className="text-xl font-bold mb-4">CAD Software Guide</h3>
-          <p className="text-slate-400 mb-4">
-            Helping you find the perfect CAD software for your needs since 2024
-          </p>
-          <div className="text-sm text-slate-500 space-y-1">
-            <p>Over 200 CAD software options • Free and paid solutions • All skill levels</p>
-            <p>© 2024 CAD Software Guide. All rights reserved.</p>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <TrendingTools />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate('/quiz')}
+                >
+                  Take Quiz
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/compare')}
+                >
+                  Compare Tools
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/blog')}
+                >
+                  Read Blog
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </footer>
+
+        {/* Blog Section */}
+        <BlogSection />
+      </div>
     </div>
   );
 };

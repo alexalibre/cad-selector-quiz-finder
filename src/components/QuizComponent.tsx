@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +15,12 @@ interface QuizAnswers {
 interface QuizComponentProps {
   onComplete: (results: any) => void;
   onClose: () => void;
+  previousAnswers?: QuizAnswers | null;
 }
 
-const QuizComponent: React.FC<QuizComponentProps> = ({ onComplete, onClose }) => {
+const QuizComponent: React.FC<QuizComponentProps> = ({ onComplete, onClose, previousAnswers }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<QuizAnswers>({});
+  const [answers, setAnswers] = useState<QuizAnswers>(previousAnswers || {});
 
   const questions = [
     {
