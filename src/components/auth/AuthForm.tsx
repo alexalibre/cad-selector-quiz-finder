@@ -15,8 +15,8 @@ interface AuthFormProps {
 
 const AuthForm = ({ onSuccess }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('alex@admin.com');
+  const [password, setPassword] = useState('Alibre');
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -48,7 +48,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Sign up without email confirmation
+    // Sign up without email confirmation required
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -67,19 +67,11 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         variant: "destructive",
       });
     } else if (data.user) {
-      // Check if user was created and confirmed
-      if (data.user.email_confirmed_at || !data.user.confirmation_sent_at) {
-        toast({
-          title: "Account created!",
-          description: "You have been registered and logged in successfully.",
-        });
-        onSuccess();
-      } else {
-        toast({
-          title: "Registration Successful",
-          description: "Your account has been created. You can now sign in.",
-        });
-      }
+      // For new signups, show success message
+      toast({
+        title: "Account created!",
+        description: "You have been registered successfully. You can now sign in.",
+      });
     }
     setIsLoading(false);
   };
@@ -128,6 +120,9 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign In
                 </Button>
+                <div className="text-sm text-gray-600 text-center">
+                  <p>Default admin: alex@admin.com / Alibre</p>
+                </div>
               </form>
             </TabsContent>
             

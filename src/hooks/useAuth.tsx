@@ -18,15 +18,21 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check if user is admin
+          // Check if user is admin - use setTimeout to avoid recursion
           setTimeout(async () => {
-            const { data } = await supabase
-              .from('admin_users')
-              .select('id')
-              .eq('id', session.user.id)
-              .single();
-            console.log('Admin check result:', data);
-            setIsAdmin(!!data);
+            try {
+              const { data, error } = await supabase
+                .from('admin_users')
+                .select('id, role')
+                .eq('id', session.user.id)
+                .single();
+              
+              console.log('Admin check result:', data, error);
+              setIsAdmin(!!data && data.role === 'admin');
+            } catch (error) {
+              console.error('Error checking admin status:', error);
+              setIsAdmin(false);
+            }
           }, 0);
         } else {
           setIsAdmin(false);
@@ -41,7 +47,28 @@ export const useAuth = () => {
       console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        // Check admin status for existing session
+        setTimeout(async () => {
+          try {
+            const { data, error } = await supabase
+              .from('admin_users')
+              .select('id, role')
+              .eq('id', session.user.id)
+              .single();
+            
+            console.log('Initial admin check result:', data, error);
+            setIsAdmin(!!data && data.role === 'admin');
+          } catch (error) {
+            console.error('Error checking initial admin status:', error);
+            setIsAdmin(false);
+          }
+          setLoading(false);
+        }, 0);
+      } else {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
