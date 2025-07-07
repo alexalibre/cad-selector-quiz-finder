@@ -30,14 +30,14 @@ const Footer = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 text-xs transition-colors ${
+                className={`flex flex-col items-center gap-1 text-xs transition-colors duration-200 ${
                   isActive 
                     ? 'text-blue-600 font-medium' 
                     : 'text-slate-600 hover:text-blue-600'
                 }`}
               >
                 <Icon className="h-5 w-5" />
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             );
           })}

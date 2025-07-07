@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Admin from "./pages/Admin";
 import Quiz from "./pages/Quiz";
 import Blog from "./pages/Blog";
 import Compare from "./pages/Compare";
@@ -25,7 +26,7 @@ const App = () => (
           <div className="flex-1">
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<Index />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/quiz" element={<Quiz />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/compare" element={<Compare />} />

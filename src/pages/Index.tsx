@@ -121,14 +121,14 @@ const Index = () => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // Show admin dashboard if user is admin
-  if (user && isAdmin) {
-    return <AdminDashboard />;
-  }
-
   // Show auth form if user is not logged in
   if (!user) {
     return <AuthForm onSuccess={() => window.location.reload()} />;
+  }
+
+  // Check if we're on the admin route specifically
+  if (window.location.pathname === '/admin' && isAdmin) {
+    return <AdminDashboard />;
   }
 
   return (
@@ -279,6 +279,11 @@ const Index = () => {
             ) : filteredSoftware.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-slate-500">No software found matching your criteria.</p>
+                {software.length === 0 && (
+                  <p className="text-slate-400 mt-2">
+                    No CAD software entries available. Please contact admin to add sample data.
+                  </p>
+                )}
               </div>
             ) : (
               <>
